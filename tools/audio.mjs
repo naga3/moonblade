@@ -7,7 +7,7 @@ const {Engine}=await import(pathToFileURL(join(PX13H,'tools/music/web/engine.js'
 const {parseSong,compose,analyze,buildTracks,engineSong}=await import(pathToFileURL(join(PX13H,'tools/music/web/song.js')));
 const wasm=readFileSync(join(PX13H,'tools/music/web/engine.wasm'));
 const RATE=48000;
-const defs={field:{loop:true,peak:.28},jump:{peak:.25},sword:{peak:.28},hit:{peak:.32},hurt:{peak:.28},gem:{peak:.24},bounce:{peak:.26},check:{peak:.25},win:{peak:.28}};
+const defs={field:{loop:true,peak:.28},title:{loop:true,peak:.26},jump:{peak:.25},sword:{peak:.28},hit:{peak:.32},hurt:{peak:.28},gem:{peak:.24},bounce:{peak:.26},check:{peak:.25},win:{peak:.28}};
 const out={};
 for(const[name,def]of Object.entries(defs)){
  const file=join(ROOT,'music',`${name}.song`),song=parseSong(readFileSync(file,'utf8'));

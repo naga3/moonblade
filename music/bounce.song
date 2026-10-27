@@ -4,6 +4,24 @@ mode famicom
 instrument 0 bounce @1 q8
   v: 15 13 11 9 7 5 3 0
   p: 0 24 48 72 96 120 144 168
+instrument 1 snap @0 q8
+  v: 15 14 12 10 8 6 5 4 3 2 1 0
+  p: 0 16 40 72 112 160 216 280 344 416 496 584
+instrument 2 click q8
+  v: 15 9 4 1 0
+instrument 3 thump q8
+  v: 15 15 15 15 15 0
+  p: 0 -24 -48 -72 -96 -120
+instrument 4 fat @2 q8
+  v: 15 15 14 12 10 9 8 7 6 5 4 3 2 1 0
+  p: -24 0 24 48 72 96 112 128 140 150 158 164 168 170 172
+instrument 5 sparkle @1 q8
+  v: 14 13 12 11 10 9 8 7 6 5 4 3 2 1 0
+  p: 0 0 0 32 32 32 56 56 56 96 96 96 128 128 128
 part 0 @i0 v11
 bar 1
-  0: o3 g+16
+  0: @i4 v12 o4 c8
+  1: r32 @i4 v6 o4 c16 r32
+  2: @i3 o3 c16 r16
+  3: @i2 v12 o4 g16 r16
+  4: @ c8

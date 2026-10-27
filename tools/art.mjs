@@ -24,10 +24,10 @@ function walk(dir){for(const e of readdirSync(dir,{withFileTypes:true}).sort((a,
  }
 }}
 walk(root);
-const required=['characters/hero/stand','characters/hero/attack_side','characters/hero/attack_up','characters/hero/attack_down','enemies/knight/stand','enemies/sentinel/stand','items/icons/heart','items/icons/empty','items/icons/gem','background/moon/disc'];
+const required=['characters/hero/stand','characters/hero/attack_side','characters/hero/attack_up','characters/hero/attack_down','enemies/knight/stand','enemies/sentinel/stand','enemies/king/stand','enemies/king/float','enemies/king/guard','items/icons/heart','items/icons/empty','items/icons/gem','background/moon/disc',...['aqueduct','keep','belfry','throne','column','post'].map(n=>'background/scenery/'+n)];
 for(const stage of ['grove','ruins','keep'])for(const tile of ['top_even','top_odd','ground_even','ground_odd','platform','spikes'])required.push(`tiles/${stage}/${tile}`);
 for(const kind of ['side','up','down'])for(const prefix of ['','enemy_'])required.push(`weapons/sword/${prefix}${kind}`);
 for(const id of required)if(!result.pics[id])throw Error(`必要な絵がありません: ${id}`);
-for(const id of ['characters/hero/idle','characters/hero/walk','characters/hero/air','enemies/slime/idle','enemies/bat/idle'])if(!result.anims[id]?.length)throw Error(`必要な動きがありません: ${id}`);
+for(const id of ['characters/hero/idle','characters/hero/walk','characters/hero/air','enemies/slime/idle','enemies/bat/idle','enemies/wisp/idle','enemies/beetle/idle'])if(!result.anims[id]?.length)throw Error(`必要な動きがありません: ${id}`);
 writeChanged(join(ROOT,'dist/art-data.js'),`// Generated from art/*.pic and moonblade.gpl by tools/art.mjs. Edit in PX-13h Pixel.\nwindow.MOONBLADE_ART=${JSON.stringify(result)};\n`);
 console.log(`Pixel: ${Object.keys(result.pics).length}枚、${Object.keys(result.anims).length}アニメ、共通64色 → dist/art-data.js`);

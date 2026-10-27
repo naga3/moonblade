@@ -4,6 +4,38 @@ mode famicom
 instrument 0 jump @1 q8
   v: 15 14 12 10 8 6 3 0
   p: 0 16 32 48 64 80 96 112
+instrument 1 thump q8
+  v: 15 15 15 15 15 0
+  p: 0 -24 -48 -72 -96 -120
+instrument 2 wind q8
+  v: 6 10 14 15 13 10 8 6 4 3 2 1 0
+instrument 3 rise @2 q8
+  v: 15 15 14 12 10 9 8 7 6 5 4 3 2 1 0
+  p: -48 0 40 72 96 112 124 132 138 142 145 147 148 148 148
+instrument 4 leap @2 q8
+  v: 15 15 14 13 11 10 9 8 7 6 5 4 3 2 1 0
+  p: -96 -24 32 80 120 152 176 192 204 212 218 222 224 224 224 224
+instrument 5 click q8
+  v: 15 9 4 1 0
 part 0 @i0 v12
 bar 1
   0: o3 f16
+
+choice jump bars 1 parts 0,1,2,3,4 "剣 B に合わせたジャンプ"
+  # A: 剣 B と同じ組み（踏み込み・風・太い上昇・エコー・DPCM キック）
+  A 0: @i3 v12 o4 g8
+  A 1: r32 @i3 v6 o4 g16 r32
+  A 2: @i1 v10 o3 c16 r16
+  A 3: @i2 v12 o5 f16 r16
+  A 4: @ c8
+  # B: 軽め（DPCM 無し、短いノイズで踏む。何度も鳴る用）
+  B 0: @i3 v12 o4 a8
+  B 1: r32 @i3 v6 o4 a16 r32
+  B 2: @i1 v8 o3 g16 r16
+  B 3: @i5 v10 o4 g16 r16
+  # C: 高く跳ぶ（下から大きく上昇、風を長く）
+  C 0: @i4 v12 o4 e8
+  C 1: r32 @i4 v6 o4 e16 r32
+  C 2: @i1 v10 o3 c16 r16
+  C 3: @i2 v13 o5 c+8
+  C 4: @ c8

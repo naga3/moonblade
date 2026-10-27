@@ -1,8 +1,42 @@
 title クリア / 夜明け
 tempo 120
 mode famicom
-instrument 0 dawn @2 q7
-  v: 15 13 11 9 7 5 3 2 1 0
+instrument 0 dawn @2 q8
+  v: 15 14 12 10 8 6 4 2 1 0
+  p: -24 -12 -4 0
+instrument 1 dawnlong @2 q8
+  v: 15 15 14 14 13 13 12 12 11 11 10 10 9 9 8 8 7 7 6 6 5 5 4 4 3 3 2 2 1 1 0
+  p: -24 -12 -4 0
+instrument 2 click q8
+  v: 15 9 4 1 0
+instrument 3 thump q8
+  v: 15 15 15 15 15 0
+  p: 0 -24 -48 -72 -96 -120
+instrument 4 low q8
+  v: 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 15 0
 part 0 @i0 v11
 bar 1
-  0: o4 a16 >c+16 e16 a4
+  0: @i0 v12 o4 a16 >c+16 e16 @i1 a4.
+  1: r32 @i0 v6 o4 a16 >c+16 e16 @i1 a4 r16.
+  2: @i3 o3 a16 r8 @i3 o3 a16 @i4 o2 a4 r16
+  3: @i2 v12 o4 g16 r8 v10 g16 r4 r16
+  4: @ c8. c4.
+choice win-tone bars 1 parts 0,1,2,3,4 "効果音のテイストに合わせる"
+  # A: そのまま重く（元の音の並び）
+  A 0: @i0 v12 o4 a16 >c+16 e16 @i1 a4.
+  A 1: r32 @i0 v6 o4 a16 >c+16 e16 @i1 a4 r16.
+  A 2: @i3 o3 a16 r8 @i3 o3 a16 @i4 o2 a4 r16
+  A 3: @i2 v12 o4 g16 r8 v10 g16 r4 r16
+  A 4: @ c8. c4.
+  # B: 最後を 1 オクターブ上へ抜ける
+  B 0: @i0 v12 o4 a16 >c+16 e16 @i1 >a4.
+  B 1: r32 @i0 v6 o4 a16 >c+16 e16 @i1 >a4 r16.
+  B 2: @i3 o3 a16 r8 @i3 o3 a16 @i4 o2 a4 r16
+  B 3: @i2 v12 o4 g16 r8 v10 g16 r4 r16
+  B 4: @ c8. c4.
+  # C: 踏み込みを 2 回、溜めてから着地
+  C 0: @i0 v12 o4 e16 a16 >c+16 e8 @i1 a4
+  C 1: r32 @i0 v6 o4 e16 a16 >c+16 e8 @i1 a8. r32
+  C 2: @i3 o3 a16 @i3 o3 a16 r16 r8 @i3 o3 a16 @i4 o2 a8.
+  C 3: @i2 v12 o4 g16 g16 r16 r8 v10 g16 r8.
+  C 4: @ c16 c16 r16 r8 c4

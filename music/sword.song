@@ -6,8 +6,25 @@ instrument 0 cut @0 q8
 instrument 1 low q8
   v: 15 12 6 0
   p: 0 -12 -24 -40 -56
+instrument 2 thump q8
+  v: 15 15 15 15 15 0
+  p: 0 -24 -48 -72 -96 -120
+instrument 3 swing @2 q8
+  v: 15 15 14 12 10 9 8 7 6 5 4 3 2 1 0
+  p: -48 0 40 72 96 112 124 132 138 142 145 147 148 148 148
+instrument 4 slash @2 q8
+  v: 15 15 14 12 10 9 8 7 6 5 4 3 2 1 0
+  p: 48 0 -40 -72 -96 -112 -124 -132 -138 -142 -145 -147 -148 -148 -148
+instrument 5 wind q8
+  v: 6 10 14 15 13 10 8 6 4 3 2 1 0
+instrument 6 flick @2 q8
+  v: 12 11 9 7 5 3 1 0
+  p: 48 0 -48 -84 -108 -122 -130 -134
 part 2 @i1 v10
 part 3 @i0 v12
 bar 1
-  2: o2 f32
-  3: o5 f32
+  2: r8
+  3: @i5 v9 o5 a8
+  0: @i6 v6 o5 e16 r16
+  1: r8
+  4: r8

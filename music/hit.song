@@ -6,8 +6,38 @@ instrument 0 spark @0 q8
   p: 0 -24 -48 -72 -96
 instrument 1 crack @1 q8
   v: 15 10 7 4 1 0
+instrument 2 thump q8
+  v: 15 15 15 15 15 0
+  p: 0 -24 -48 -72 -96 -120
+instrument 3 clang @2 q8
+  v: 15 15 13 11 9 8 7 6 5 4 3 2 1 0
+  p: -32 0 20 34 44 50 54 56 57 58 58 58 58 58
+instrument 4 strike @2 q8
+  v: 15 14 13 11 9 8 7 6 5 4 3 2 1 0
+  p: -48 0 32 56 72 84 92 98 102 104 105 106 106 106
+instrument 5 crash q8
+  v: 15 12 9 7 5 3 2 1 0
 part 0 @i0 v12
 part 3 @i1 v10
 bar 1
   0: o5 f16
   3: o4 g16
+choice hit bars 1 parts 0,1,2,3,4 "効果音のテイストに合わせる"
+  # A: 重く打ち込む（キックつき、低めの金属音）
+  A 0: @i3 v12 o4 a8
+  A 1: r32 @i3 v6 o4 a16 r32
+  A 2: @i2 v10 o3 c16 r16
+  A 3: @i5 v12 o4 g16 r16
+  A 4: @ c8
+  # B: 火花が散る（高めの金属音、強いスネア）
+  B 0: @i4 v12 o5 d8
+  B 1: r32 @i4 v6 o5 d16 r32
+  B 2: @i2 v10 o3 f16 r16
+  B 3: @i5 v12 o5 c+16 r16
+  B 4: @ b8
+  # C: 軽く当てる（DPCM なし、ハイハットで火花）
+  C 0: @i3 v12 o5 c8
+  C 1: r32 @i3 v6 o5 c16 r32
+  C 2: @i2 v10 o3 g16 r16
+  C 3: @i5 v10 o5 f16 r16
+  C 4: r8

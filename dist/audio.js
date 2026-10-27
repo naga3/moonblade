@@ -1,4 +1,5 @@
 // Play the WAVs rendered by PX-13h Music. Embedded data also works with file://.
+// If the wanted track changes while one is loading, the stale load restarts with the new one.
 (() => {
 'use strict';
 const songs=window.MOONBLADE_AUDIO;
@@ -8,7 +9,7 @@ function ensure(){if(ctx)return ctx;const AC=window.AudioContext||window.webkitA
 function load(name){if(buffers.has(name))return buffers.get(name);const task=(async()=>{if(!songs[name])throw Error(`Unknown sound: ${name}`);const str=atob(songs[name].data),data=Uint8Array.from(str,c=>c.charCodeAt(0));return ensure().decodeAudioData(data.buffer);})();buffers.set(name,task);return task;}
 function stopMusic(remember){if(!music)return;if(remember)offset=(offset+ctx.currentTime-startedAt)%music.buffer.duration;try{music.stop();}catch{}music.disconnect();music=null;}
 function stopEffects(){for(const s of voices){try{s.stop();}catch{}s.disconnect();}voices.clear();}
-async function startMusic(){if(!ctx||!wanted||paused||!enabled||music||starting)return;starting=true;const name=wanted,gen=generation;try{const buffer=await load(name);if(gen!==generation||wanted!==name||paused||!enabled)return;const source=ctx.createBufferSource();source.buffer=buffer;source.loop=songs[name].loop;source.connect(master);source.start(0,offset%buffer.duration);startedAt=ctx.currentTime;music=source;}catch(e){console.error('Music:',e);}finally{starting=false;}}
+async function startMusic(){if(!ctx||!wanted||paused||!enabled||music||starting)return;starting=true;const name=wanted,gen=generation;try{const buffer=await load(name);if(gen!==generation||wanted!==name||paused||!enabled){starting=false;startMusic();return;}const source=ctx.createBufferSource();source.buffer=buffer;source.loop=songs[name].loop;source.connect(master);source.start(0,offset%buffer.duration);startedAt=ctx.currentTime;music=source;}catch(e){console.error('Music:',e);}finally{starting=false;}}
 window.MoonbladeAudio={
  unlock(){const c=ensure();if(!c)return;if(c.state==='suspended')c.resume().catch(()=>{});startMusic();},
  sync(name,isPaused,isMuted){

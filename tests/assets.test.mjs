@@ -17,15 +17,15 @@ test('Pixelの全素材がゲームの共通64色に収まり、キャラクタ�
  }
  for(const[id,frames]of Object.entries(a.anims))for(const f of frames){assert.ok(a.pics[f.pic],`${id}: ${f.pic}`);assert.ok(f.ms>=10);}
 });
-test('Musicの9ファイルを公式check.jsで検証し、実際のWAVを確認',()=>{
- const audio=generated(ROOT,'audio-data.js','MOONBLADE_AUDIO');assert.equal(Object.keys(audio).length,9);
+test('Musicの10ファイルを公式check.jsで検証し、実際のWAVを確認',()=>{
+ const audio=generated(ROOT,'audio-data.js','MOONBLADE_AUDIO');assert.equal(Object.keys(audio).length,10);
  for(const[name,a]of Object.entries(audio)){
   execFileSync(process.execPath,[join(PX13H,'tools/music/check.js'),join(ROOT,'music',`${name}.song`)],{stdio:'pipe'});
   const wav=Buffer.from(a.data,'base64');assert.equal(wav.toString('ascii',0,4),'RIFF');assert.equal(wav.toString('ascii',8,12),'WAVE');assert.equal(wav.readUInt32LE(24),48000);assert.equal(wav.readUInt16LE(22),1);assert.equal(wav.readUInt32LE(40),wav.length-44);
   let peak=0;for(let i=44;i<wav.length;i+=2)peak=Math.max(peak,Math.abs(wav.readInt16LE(i)));assert.ok(peak>1000&&peak<16000,`${name}: audible, unclipped`);
   assert.ok(Math.abs(a.seconds-(wav.length-44)/96000)<1e-9);
  }
- assert.equal(audio.field.loop,true);for(const n of Object.keys(audio).filter(n=>n!=='field'))assert.equal(audio[n].loop,false);
+ for(const n of ['field','title'])assert.equal(audio[n].loop,true,n);for(const n of Object.keys(audio).filter(n=>n!=='field'&&n!=='title'))assert.equal(audio[n].loop,false);
 });
 test('Pixel/Musicのグループに実ファイルと保存後フックが登録されている',async()=>{
  const pixel=await import(pathToFileURL(join(PX13H,'tools/pixel/groups.js')));

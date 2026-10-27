@@ -4,28 +4,126 @@ mode famicom
 # 元のゲームの旋律。矩形波メロディと三角波ベース。
 instrument 0 moon @2 q6
   v: 15 13 11 9 7 5 3 1 0
+instrument 1 lead @1 q8 ~10,8,20
+  v: 13 13 12 12 12 11 11 11 10 10 10 9 9 9 9 8 8 8 8 7 7 7 7 6 6 6 6 6 5 5 5 5 5 | 5 / 4 3 2 1 0
+instrument 2 lead-scoop @1 q8 ~10,8,20
+  v: 13 13 12 12 12 11 11 11 10 10 10 9 9 9 9 8 8 8 8 7 7 7 7 6 6 6 6 6 5 5 5 5 5 | 5 / 4 3 2 1 0
+  p: -16 -11 -7 -4 -2 -1 0
+instrument 3 twin @1 q8 ~10,8,20
+  v: 15 14 13 12 | 12 / 9 6 3 0
+  p: 1
+instrument 4 twin-scoop @1 q8 ~10,8,20
+  v: 15 14 13 12 | 12 / 9 6 3 0
+  p: -15 -10 -6 -3 -1 0 1
+instrument 5 riff @2 q8
+  v: 15 12 9 7 5 4 3 2 1 0
+instrument 6 bass q6
+instrument 7 kick @0 q8
+  v: 15 11 7 4 2 1 0
+instrument 8 snare @0 q8
+  v: 15 13 10 8 6 5 4 3 2 1 0
+instrument 9 hat @0 q8
+  v: 9 5 2 0
+instrument 10 crash @0 q8
+  v: 14 13 12 11 10 10 9 9 8 8 7 7 6 6 6 5 5 5 4 4 4 3 3 3 2 2 2 1 1 1 0
 part 0 @i0 v6
 part 1 v0
 part 2 v10 q4
 part 3 v0
 
 bar 1 A
-  0: o4 a8 r8 >e8 r8 c8 r8 <b8 r8
+  0: @i2 v12 o5 e4. @i1 d8 c8 d8 e8 a8
   1: r1
-  2: o2 a2 a2
-  3: r1
+  2: @i6 v10 o2 l8 a a >a <a a a >a <a
+  3: v13 @i10 o5 d8 @i9 f8 @i8 c+8 @i9 f8 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f8
+  4: r1
 bar 2
-  0: o4 a8 r8 e8 r8 g8 r8 e8 r8
+  0: @i2 a4. @i1 g8 f4 d8 <b8
   1: r1
-  2: o2 a2 a2
-  3: r1
-bar 3 B
-  0: o4 f8 r8 >c8 r8 <a8 r8 g8 r8
+  2: o2 f f >f <f g g >g <g
+  3: @i7 o4 g8 @i9 o5 f8 @i8 c+8 @i9 f8 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f8
+  4: r1
+bar 3
+  0: @i2 o5 e4. @i1 c8 <a8 b8 >c8 e8
   1: r1
-  2: o2 f2 f2
-  3: r1
+  2: o2 a a >a <a a a >a <a
+  3: @i7 o4 g8 @i9 o5 f8 @i8 c+8 @i9 f8 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f8
+  4: r1
 bar 4
-  0: o4 e8 r8 d8 r8 e8 r8 g8 r8
+  0: @i2 o5 d4. @i1 e8 @i2 <b2
   1: r1
-  2: o2 g2 g2
-  3: r1
+  2: o2 f f >f <f e e >e <e
+  3: @i7 o4 g8 @i9 o5 f8 @i8 c+8 @i9 f16 f16 @i8 c+16 c+16 @i7 o4 g16 g16 @i8 o5 c+8 c+8
+  4: r2 d8 d8 b8 b8
+bar 5 A2
+  0: @i2 o5 e4. @i1 d8 c8 d8 e8 a8
+  1: @i5 v7 o3 l16 [a a >e <a]4
+  2: o2 a a >a <a a a >a <a
+  3: v13 @i10 o5 d8 @i9 f8 @i8 c+8 @i9 f16 f16 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f16 f16
+  4: c4 d4 c8 c8 d4
+bar 6
+  0: @i2 o5 a4. @i1 g8 f8 a8 g8 d8
+  1: o3 l16 [f f >c <f]2 [g g >d <g]2
+  2: o2 f f >f <f g g >g <g
+  3: @i7 o4 g8 @i9 o5 f8 @i8 c+8 @i9 f16 f16 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f16 f16
+  4: c4 d4 c8 c8 d4
+bar 7
+  0: o5 r8 @i2 c4 @i1 <b8 a8 @i2 >e4.
+  1: o3 l16 [a a >e <a]4
+  2: o2 a a >a <a a a >a <a
+  3: @i7 o4 g8 @i9 o5 f16 @i8 v6 c+16 v13 c+8 @i9 f16 f16 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f16 f16
+  4: c4 d4 c8 c8 d4
+bar 8
+  0: @i2 o5 f4. @i1 e8 d8 c8 <b8 g+8
+  1: o3 l16 [d d a d]2 [e e b e]2
+  2: o2 d d >d <d e e >e <e
+  3: @i7 o4 g8 @i9 o5 f8 @i8 c+8 @i9 f16 f16 @i8 c+16 c+16 @i7 o4 g16 g16 @i8 o5 c+8 c+8
+  4: c4 d4 d8 c8 d8 d8
+bar 9 B
+  0: @i2 o5 d2 @i1 c8 d8 f4
+  1: @i1 v5 o5 r8 d2 c8 d8 f8
+  2: o2 d d >d <d d d >d <d
+  3: v13 @i10 o5 d8 @i9 f8 @i8 c+8 @i9 f16 f16 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f16 f16
+  4: c4 d4 c8 c8 d4
+bar 10
+  0: @i2 o5 e2 @i1 d8 e8 g4
+  1: o5 f8 e2 d8 e8 g8
+  2: o2 e e >e <e e e >e <e
+  3: @i7 o4 g8 @i9 o5 f8 @i8 c+8 @i9 f16 f16 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f16 f16
+  4: c4 d4 c8 c8 d4
+bar 11
+  0: @i2 o5 f2 @i1 e8 f8 a4
+  1: o5 g8 f2 e8 f8 a8
+  2: o2 f f >f <f f f >f <f
+  3: @i7 o4 g8 @i9 o5 f16 @i8 v6 c+16 v13 c+8 @i9 f16 f16 @i7 o4 g8 g8 @i8 o5 c+8 @i9 f16 f16
+  4: c4 d4 c8 c8 d4
+bar 12
+  0: @i2 o5 g2 @i1 f8 g8 d4
+  1: o5 a8 g2 f8 g8 d8
+  2: o2 g g >g <g g g a b
+  3: @i8 o5 v8 c+16 c+16 v9 c+16 c+16 v10 c+16 c+16 v11 c+16 c+16 v12 c+16 c+16 v13 c+16 c+16 v14 c+16 c+16 v15 c+16 c+16
+  4: c8 d16 d16 d8 d16 d16 d16 d16 d16 d16 b16 b16 b16 b16
+bar 13 サビ
+  0: @i2 o5 b4 @i1 a4. e8 >c8 <b8
+  1: @i5 v7 o4 l16 [a >c e a <]4
+  2: o2 a a >a <a a a >a <a
+  3: v13 @i10 o5 d8 @i9 f16 f16 @i8 c+8 @i9 f16 f16 @i7 o4 g16 g16 @i9 o5 f16 f16 @i8 c+8 @i9 f16 f16
+  4: c8 c16 c16 d8 c8 c8 c16 c16 d8 c8
+bar 14
+  0: @i2 o5 g4 @i1 f4. c8 a8 g8
+  1: o4 l16 [f a >c f <]4
+  2: o2 f f >f <f f f >f <f
+  3: @i7 o4 g8 @i9 o5 f16 f16 @i8 c+8 @i9 f16 f16 @i7 o4 g16 g16 @i9 o5 f16 f16 @i8 c+8 @i9 f16 f16
+  4: c8 c16 c16 d8 c8 c8 c16 c16 d8 c8
+bar 15
+  0: @i2 o5 e4 @i1 d4. <b8 >f8 e8
+  1: @i4 v9 o5 e4 @i3 d4. <b8 >f8 e8
+  2: o2 g g >g <g g g >g <g
+  3: @i7 o4 g8 @i9 o5 f16 @i8 v6 c+16 v13 c+8 @i9 f16 f16 @i7 o4 g16 g16 @i9 o5 f16 f16 @i8 c+8 @i9 f16 f16
+  4: c8 c16 c16 d8 c8 c8 c16 c16 d8 c8
+bar 16
+  0: @i2 o5 c4 @i1 <b4. g+8 a8 b8
+  1: @i4 o5 c4 @i3 <b4. g+8 a8 b8
+  2: o2 e e >e <e e e g+ b
+  3: @i7 o4 g8 @i9 o5 f16 f16 @i8 c+8 @i9 f16 f16 @i8 c+16 c+16 c+16 c+16 c+16 c+16 c+16 c+16
+  4: c8 c16 c16 d8 c8 b16 b16 b16 b16 b16 b16 b16 b16

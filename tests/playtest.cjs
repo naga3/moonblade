@@ -17,15 +17,18 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   await page.goto('http://localhost:4176/?test');
   fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
   await page.screenshot({path:path.join(root,'test-results/title.png')});
+  // The first key on the title only wakes the sound; the title music starts and the game does not.
+  await page.keyboard.press('Shift');await page.evaluate(()=>__moonblade.render());assert.equal(await page.evaluate(()=>__moonblade.state.mode),'title');
+  await page.waitForFunction(()=>__moonblade.state.audio.playing&&__moonblade.state.audio.track==='title',null,{polling:50});
   await page.keyboard.press('Enter');
   await page.evaluate(()=>__moonblade.step(1));
   assert.equal(await page.evaluate(()=>__moonblade.state.mode),'play');
-  await page.waitForFunction(()=>__moonblade.state.audio.playing);
+  await page.waitForFunction(()=>__moonblade.state.audio.playing,null,{polling:50});
   assert.equal(await page.evaluate(()=>__moonblade.state.audio.track),'field','PX-13h WAV background music');
   await page.keyboard.press('KeyM');await page.evaluate(()=>__moonblade.step(1));
   assert.ok(await page.evaluate(()=>__moonblade.state.audio.muted&&!__moonblade.state.audio.playing),'mute stops the music');
   await page.keyboard.press('KeyM');await page.evaluate(()=>__moonblade.step(1));
-  await page.waitForFunction(()=>__moonblade.state.audio.playing);
+  await page.waitForFunction(()=>__moonblade.state.audio.playing,null,{polling:50});
   await page.evaluate(()=>__moonblade.step(30));
   assert.equal(await page.evaluate(()=>__moonblade.state.player.y),192,'lands on 16px map');
   await page.keyboard.down('ArrowRight');await page.evaluate(()=>__moonblade.step(30));await page.keyboard.up('ArrowRight');
@@ -47,6 +50,38 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   });
   for(const a of attacks)assert.ok(a.dead,`${a.dir} thrust kills`);
   assert.ok(attacks[2].bounce< -5,'down thrust bounces');
+  const switched=await page.evaluate(()=>{
+   const g=__moonblade,out={};
+   g.clear();g.start();g.step(30);for(const e of g.state.enemies)e.alive=false;
+   g.setPlayer({x:80,y:192,ground:true,vx:0,vy:0,cooldown:0,inv:0});g.key('attack',true);g.step(4);g.key('up',true);g.step(1);out.up=g.state.player.attackDir;
+   g.clear();g.step(30);g.setPlayer({x:80,y:120,ground:false,vx:0,vy:0,attack:0,cooldown:0,inv:0});g.key('attack',true);g.step(4);g.key('down',true);g.step(1);out.down=g.state.player.attackDir;
+   g.clear();g.step(30);g.setPlayer({x:80,y:192,ground:true,vx:0,vy:0,attack:0,cooldown:0,inv:0});g.key('attack',true);g.step(1);g.key('attack',false);g.step(14);g.key('attack',true);g.step(1);g.key('attack',false);g.step(8);out.buffered=g.state.player.attack>0;
+   g.clear();return out;
+  });
+  // Wisps yield only to a downward thrust (and re-form); beetles only to an upward one;
+  // the king by stance: floating -> up, shield -> down, after his charge -> any.
+  const rules=await page.evaluate(()=>{
+   const g=__moonblade,out={};
+   const strike=(lv,type,dir,set={},pl={})=>{g.clear();g.level(lv);g.step(1);for(const e of g.state.enemies)if(e.type!==type)e.alive=false;
+    const e=g.state.enemies.find(e=>e.type===type);const ground=dir!=='down';
+    g.setPlayer({x:e.x+(dir==='side'?-14:0),y:dir==='down'?e.y-24:dir==='up'?e.y+28:e.y,vx:0,vy:dir==='down'?1:0,ground,cooldown:0,attack:0,inv:200,...pl});Object.assign(e,{inv:0,...set});
+    g.key(dir==='side'?'right':dir,dir!=='side');g.key('attack',true);g.step(1);const r={hp:e.hp,alive:e.alive,vy:g.state.player.vy};g.clear();return r;};
+   out.wispSide=strike(3,'wisp','side').alive;out.wispDown=strike(3,'wisp','down');
+   g.step(160);out.wispBack=g.state.enemies.find(e=>e.type==='wisp').alive;
+   out.beetleSide=strike(4,'beetle','side',{timer:0}).alive;out.beetleDown=strike(4,'beetle','down',{timer:0});out.beetleUp=strike(4,'beetle','up',{timer:0}).alive;
+   const king=(dir,phase)=>strike(5,'king',dir,{timer:phase*200+100,phase,y:phase===0?166:192,dash:1},{x:1100}).hp;
+   g.clear();g.level(5);g.setPlayer({x:66*16});g.step(1);const awake=g.state.bossAwake;
+   out.king=[[0,'side'],[0,'up'],[1,'side'],[1,'up'],[1,'down'],[2,'side']].map(([ph,d])=>{g.clear();g.level(5);const e=g.state.enemies.find(e=>e.type==='king');g.setPlayer({x:66*16});g.step(1);
+    e.timer=ph*200+100;e.phase=ph;e.y=ph===0?166:192;e.x=67*16;e.inv=0;e.vy=0;
+    g.setPlayer({x:e.x+(d==='side'?-14:0),y:d==='down'?e.y-24:d==='up'?e.y+28:e.y,vx:0,vy:d==='down'?1:0,ground:d!=='down',cooldown:0,attack:0,inv:200,facing:1});
+    if(d!=='side')g.key(d,true);g.key('attack',true);g.step(1);const hp=e.hp;g.clear();return hp;});
+   out.awake=awake;return out;
+  });
+  assert.equal(rules.wispSide,true,'side slash passes through a wisp');assert.equal(rules.wispDown.alive,false,'down thrust pops a wisp');assert.ok(rules.wispDown.vy< -5,'and bounces');assert.ok(rules.wispBack,'wisp re-forms');
+  assert.equal(rules.beetleSide,true,'shell blocks a slash');assert.equal(rules.beetleDown.alive,true,'shell blocks a down thrust');assert.ok(rules.beetleDown.vy< -5,'but still bounces');assert.equal(rules.beetleUp,false,'one up thrust to the belly is enough');
+  assert.ok(rules.awake);assert.deepEqual(rules.king,[12,11,12,12,11,11],'king yields to up (floating), down (shield), anything (after charge)');
+  console.log('PASS: wisps only to down thrust, beetles only to up thrust, king by stance.');
+  assert.deepEqual(switched,{up:'up',down:'down',buffered:true},'up/down switch a slash mid-swing and early presses are buffered');
   console.log('PASS: keyboard movement, variable jump, slash, up thrust, down thrust and bounce.');
   const checkpoint=await page.evaluate(()=>{
    const g=__moonblade;g.start();for(const e of g.state.enemies)e.alive=false;g.setPlayer({x:650,y:192,hp:2});g.step(1);const healed=g.state.player.hp;
@@ -58,26 +93,30 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   assert.equal(paused.mode,'pause');assert.equal(paused.before,paused.after);
   assert.ok(await page.evaluate(()=>__moonblade.state.audio.paused&&!__moonblade.state.audio.playing),'pause stops the music');
   await page.keyboard.press('KeyP');await page.evaluate(()=>__moonblade.step(1));
-  // Traverse all three authored maps with only controls. The bot uses the same
+  // Traverse all six authored maps with only controls. The bot uses the same
   // collision map to time jumps and attacks; no teleporting or invulnerability.
   const runs=await page.evaluate(()=>{
    const g=__moonblade,results=[];
-   for(let stage=0;stage<3;stage++){
-    g.clear();g.level(stage);let frames=0,jumps=0,swings=0,peakBossHP=8;
+   for(let stage=0;stage<6;stage++){
+    g.clear();g.level(stage);let frames=0,jumps=0,swings=0,peakBossHP=99;
     for(;frames<9000;frames++){
      const s=g.state,p=s.player;if(s.mode!=='play'||s.level!==stage)break;
-     const boss=s.enemies.find(e=>e.type==='boss'&&e.alive);
+     const boss=s.enemies.find(e=>(e.type==='boss'||e.type==='king')&&e.alive);
      let direction='right';
      if(boss&&s.bossAwake){direction=p.x+8<boss.x+8?'right':'left';peakBossHP=Math.min(peakBossHP,boss.hp);}
+     // Over a wisp chain, steer like a player: hover above the next wisp ahead.
+     const wisp=!p.ground&&!s.map[13][Math.floor((p.x+8)/16)]&&s.enemies.filter(e=>e.alive&&e.type==='wisp'&&e.x>p.x-6&&e.y>p.y+4).sort((a,b)=>a.x-b.x)[0];
+     if(wisp)direction=p.x<wisp.x-2?'right':p.x>wisp.x+2?'left':'none';
      g.key('left',direction==='left');g.key('right',direction==='right');
-     const d=direction==='right'?1:-1,tx=Math.floor((p.x+8+d*22)/16);
+     const d=direction==='left'?-1:1,tx=Math.floor((p.x+8+d*22)/16);
      const pit=!s.map[13][tx],spike=s.map[12][tx]===3;
-     const threat=s.enemies.some(e=>e.alive&&e.type!=='bat'&&Math.abs(e.x-p.x)<48&&Math.abs(e.y-p.y)<25);
+     const threat=s.enemies.some(e=>e.alive&&e.type!=='bat'&&e.type!=='beetle'&&e.type!=='wisp'&&Math.abs(e.x-p.x)<48&&Math.abs(e.y-p.y)<25);
      if(p.ground&&(pit||spike||threat)){g.key('jump',false);g.key('jump',true);jumps++;}
      else if(p.ground)g.key('jump',false);
      const under=s.enemies.some(e=>e.alive&&Math.abs(e.x-p.x)<23&&e.y>p.y+8&&e.y<p.y+54);
      const overhead=s.enemies.some(e=>e.alive&&Math.abs(e.x-p.x)<19&&e.y<p.y-9);
-     g.key('down',!p.ground&&under);g.key('up',!under&&overhead);
+     const overPit=(!s.map[13][Math.floor((p.x+8)/16)]||!s.map[13][Math.floor((p.x+8+d*40)/16)])&&s.enemies.some(e=>e.alive&&e.type==='wisp'&&Math.abs(e.x-p.x)<96);
+     g.key('down',!p.ground&&(under||overPit));g.key('up',!under&&overhead);
      if(p.cooldown===0){g.key('attack',false);g.key('attack',true);swings++;}
      g.step(1);
     }
@@ -85,9 +124,9 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
    }g.clear();return results;
   });
   console.log('Traversal:',JSON.stringify(runs));
-  for(const r of runs){assert.ok(r.stage<2?r.level===r.stage+1:r.mode==='win',`stage ${r.stage+1} traversable: ${JSON.stringify(r)}`);}
+  for(const r of runs){assert.ok(r.stage<5?r.level===r.stage+1:r.mode==='win',`stage ${r.stage+1} traversable: ${JSON.stringify(r)}`);}
   // Inspect the actual browser framebuffer rather than only source palette values.
-  for(let stage=0;stage<3;stage++){
+  for(let stage=0;stage<6;stage++){
    await page.evaluate(i=>{__moonblade.level(i);__moonblade.step(160);},stage);
    const colors=await page.evaluate(()=>{
     const s=__moonblade.state,c=document.querySelector('canvas'),data=c.getContext('2d').getImageData(0,0,320,240).data,set=new Set();
@@ -102,10 +141,11 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   await page.screenshot({path:path.join(root,'test-results/down-thrust.png')});
   const reloaded=page.waitForEvent('domcontentloaded');
   const now=new Date();fs.utimesSync(path.join(root,'dist/art-data.js'),now,now);
-  await reloaded;await page.waitForFunction(()=>window.__moonblade?.state.mode==='title');
+  await reloaded;await page.waitForFunction(()=>window.__moonblade?.state.mode==='title',null,{polling:50});
   console.log('PASS: local preview reloads after Pixel-generated data changes.');
   const mobile=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   const m=await mobile.newPage();m.on('pageerror',e=>errors.push(e.message));await m.addInitScript(()=>{window.requestAnimationFrame=()=>0;});await m.goto('http://localhost:4176/?test');
+  await m.locator('canvas').tap({position:{x:160,y:112}});await m.evaluate(()=>__moonblade.step(1));assert.equal(await m.evaluate(()=>__moonblade.state.mode),'title','first tap wakes sound');
   await m.locator('canvas').tap({position:{x:160,y:112}});await m.evaluate(()=>__moonblade.step(31));
   assert.equal(await m.evaluate(()=>__moonblade.state.mode),'play');
   const box=await m.locator('canvas').boundingBox(),cdp=await mobile.newCDPSession(m);
@@ -120,10 +160,10 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   await m.screenshot({path:path.join(root,'test-results/mobile.png')});
   const filePage=await browser.newPage();filePage.on('pageerror',e=>errors.push(e.message));await filePage.addInitScript(()=>{window.requestAnimationFrame=()=>0;});
   await filePage.goto(require('node:url').pathToFileURL(path.join(root,'dist/index.html')).href+'?test');
-  await filePage.keyboard.press('Enter');await filePage.evaluate(()=>__moonblade.step(1));await filePage.waitForFunction(()=>__moonblade.state.audio.playing);
+  await filePage.keyboard.press('Enter');await filePage.keyboard.press('Enter');await filePage.evaluate(()=>__moonblade.step(1));await filePage.waitForFunction(()=>__moonblade.state.audio.playing,null,{polling:50});
   assert.equal(await filePage.evaluate(()=>__moonblade.state.palette.length),64,'standalone file includes Pixel palette');
   console.log('PASS: PX-13h WAV playback, mute, pause and standalone file:// art/audio.');
   assert.deepEqual(errors,[],'no browser errors');
-  console.log('PASS: checkpoints, damage, pause, three complete areas, final boss, palette and mobile.');
+  console.log('PASS: checkpoints, damage, pause, six complete areas, both bosses, palette and mobile.');
  }finally{if(browser)await browser.close();server.kill();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

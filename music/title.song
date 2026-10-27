@@ -1,0 +1,127 @@
+title 月影の剣 / タイトル（仮）
+tempo 92
+mode famicom
+# タイトル画面の曲。イ短調、16 小節を繰り返す。鐘と角笛で静かに始まり（序）、エコーの角笛とドラムで高まり、デチューンの主題で盛り上がる。
+# 最後の E から頭の Am の鐘につながる。
+instrument 0 lead @2 q8 ~12,6,16
+  v: 12 12 11 11 10 10 9 9 9 8 8 8 7 7 7 6 | 6 / 4 3 2 1 0
+instrument 1 harp @1 q6
+  v: 10 8 6 5 4 3 2 1 0
+instrument 2 bass q7
+instrument 3 hat @0 q8
+  v: 6 3 1 0
+instrument 4 bell @0 q8
+  v: 12 10 9 8 7 7 6 6 5 5 4 4 4 3 3 3 2 2 2 2 1 1 1 1 0
+instrument 5 horn @2 q7 ~10,8,20
+  v: 7 9 11 12 | 12 / 8 5 3 1 0
+  p: -16 -11 -7 -4 -2 -1 0
+instrument 6 timp @0 q8
+  v: 13 10 8 6 5 4 3 2 1 0
+instrument 7 horn-detune @2 q7 ~10,8,20
+  v: 7 9 11 12 | 12 / 8 5 3 1 0
+  p: -15 -10 -6 -3 -1 0 1
+instrument 8 cymbal @0 q8
+  v: 12 11 10 9 8 8 7 7 6 6 5 5 5 4 4 4 3 3 3 2 2 2 2 1 1 1 1 0
+instrument 9 snare @0 q8
+  v: 12 8 6 4 3 2 1 0
+part 0 @i0 v11
+part 1 @i1 v6
+part 2 @i2 v10
+part 3 @i3 v8
+
+bar 1 序
+  0: @i4 v9 o5 l8 e a b >c <b a e c
+  1: @i4 V5 v9 o5 r8 l8 e a b >c <b a e
+  2: @i2 o2 a1
+  3: @i6 o4 r2 r8 l16 v4 c v5 c v6 c v7 c v8 c v10 c
+  4: r1
+bar 2
+  0: @i5 v12 o4 l4 a >e2 d8 c8
+  1: @i4 V8 v8 o4 l8 a >c f c <a >c f c
+  2: o2 f1
+  3: v12 c4 r4 r4 l16 v6 c v8 c v10 c v12 c
+  4: r1
+bar 3
+  0: o4 b2 >d4 c8 <b8
+  1: @i4 V8 v8 o4 l8 g b >d <b g b >d <b
+  2: o2 g1
+  3: @i6 o4 v9 c4 r4 r4 r4
+  4: r1
+bar 4
+  0: o4 a2 g+2
+  1: o4 l8 e a b a e g+ b g+
+  2: o2 e1
+  3: v8 c4 r4 l16 v4 c v5 c v6 c v7 c v8 c v9 c v10 c v12 c
+  4: r1
+bar 5 高まり
+  0: @i5 v12 o4 e4 a4 >c4. <b8
+  1: @i5 V5 v12 o4 r8 e4 a4 >c4.
+  2: o2 a4. a8 a4 a4
+  3: @i6 o4 v10 c4 @i3 o5 v5 f4 @i6 o4 v8 c4 @i3 o5 v5 f4
+  4: @ c2 r2
+bar 6
+  0: o4 a2 >c4 <a4
+  1: o4 b8 a2 >c4 <a8
+  2: o2 f4. f8 f4 f4
+  3: @i6 o4 v10 c4 @i3 o5 v5 f4 @i6 o4 v8 c4 @i3 o5 v5 f4
+  4: c2 r2
+bar 7
+  0: o4 f2. e8 f8
+  1: o4 a8 f2. e8
+  2: o2 d4. d8 d4 d4
+  3: @i6 o4 v10 c4 @i3 o5 v5 f4 @i6 o4 v8 c4 @i3 o5 v5 f4
+  4: c2 r2
+bar 8
+  0: o4 e2 r8 b8 >d8 e8
+  1: o4 f8 e2 r8 b8 >d8
+  2: o2 e4. e8 e8 e8 e8 e8
+  3: @i9 o5 l16 v4 c+ c+ v5 c+ c+ v6 c+ c+ v7 c+ c+ v8 c+ c+ v9 c+ c+ v11 c+ c+ v13 c+ c+
+  4: c4 e8 e8 f8 f8 g8 g8
+bar 9 主題
+  0: @i5 v12 o5 g2 f4. c8
+  1: @i7 V15 v9 o5 g2 f4. c8
+  2: o2 l8 f >f <f >f <f >f <f >f
+  3: @i8 o5 v12 a4 @i3 v7 f8 f8 @i9 v11 c+8 @i3 v7 f8 @i9 v4 c+16 c+16 @i3 v7 f8
+  4: @ c4. c8 b4 c8 c8
+bar 10
+  0: o5 e2 d4. <b8
+  1: o5 e2 d4. <b8
+  2: o2 l8 g >g <g >g <g >g <g >g
+  3: @i3 o5 v7 l8 f f f f @i9 v11 c+ @i3 v7 f @i9 v4 c+16 c+16 @i3 v7 f8
+  4: c4. c8 b4 c8 c8
+bar 11
+  0: o5 c2 <b4. e8
+  1: o5 c2 <b4. e8
+  2: o2 l8 e >e <e >e <e >e <e >e
+  3: @i3 o5 v7 l8 f f f f @i9 v11 c+ @i3 v7 f @i9 v4 c+16 c+16 @i3 v7 f8
+  4: c4. c8 b4 c8 c8
+bar 12
+  0: o4 a2 r8 >c8 e8 g8
+  1: o4 a2 r8 >c8 e8 g8
+  2: o2 l8 a >a <a >a <a >a <a >a
+  3: @i3 o5 v7 l8 f f f f @i9 v11 c+ l16 v6 c+ c+ v8 c+ c+ v10 c+ c+
+  4: c4. c8 b8 e16 e16 f16 f16 g16 g16
+bar 13
+  0: o5 f2 a4 >d4
+  1: @i1 v8 o4 l16 d f a >d f a >d <a f d <a f d f a >d
+  2: o2 l8 d >d <d >d <d >d <d >d
+  3: @i8 o5 v12 a4 @i3 v7 f8 f8 @i9 v11 c+8 @i3 v7 f8 @i9 v4 c+16 c+16 @i3 v7 f8
+  4: c4. c8 b4 c8 c8
+bar 14
+  0: o6 c2 <b2
+  1: o4 l16 g b >d g b >d g <d <b g b >d g b >d g
+  2: o2 l8 g >g <g >g <g >g <g >g
+  3: @i3 o5 v7 l8 f f f f @i9 v11 c+ @i3 v7 f @i9 v4 c+16 c+16 @i3 v7 f8
+  4: c4. c8 b4 c8 c8
+bar 15
+  0: o5 a2 g+2
+  1: @i7 v9 o5 a2 g+2
+  2: o2 l8 e >e <e >e <e >e <e >e
+  3: @i3 o5 v7 l8 f f f f @i9 l16 v6 c+ c+ v7 c+ c+ v8 c+ c+ v10 c+ c+
+  4: c4. c8 b8 b16 b16 b8 b8
+bar 16
+  0: o5 e1
+  1: o5 e1
+  2: o2 l8 e >e <e >e <e2
+  3: @i8 o5 v12 a4 @i6 o4 l16 v10 c v9 c v8 c v8 c v7 c v6 c v6 c v5 c v4 c v4 c v3 c v2 c
+  4: c2 r2
