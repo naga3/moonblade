@@ -7,4 +7,4 @@
 - 音源は `mode famicom`（矩形波2、三角波、ノイズ、DPCM）。音色・エンベロープをファイルに書き、別の曲に依存させない。効果音では音の高さのエンベロープで上昇・下降を付けている。
 - ファイル名はゲームの音イベントに対応するので変えない。候補の選択は隣の `.picks.json` から反映される。
 
-Musicで保存すると `node tools/audio.mjs` が、Musicと同じ `engine.wasm` でWAVを生成し、`dist/audio-data.js` に埋め込む。BGMは2周目から1周を切り出して継ぎ目を整える。ゲーム実行時はPX-13hや通信は不要。`npm start` のローカル画面は書き出し後に自動で読み直す。公開URLへの反映は再配信が必要。
+Musicで保存すると `node tools/audio.mjs` が、Musicと同じ `engine.wasm` でWAVを生成し、`dist/audio-data.js` に埋め込む。BGMは2周目から1周を切り出して継ぎ目を整える。ゲーム実行時はPX-13hや通信は不要。`npm start` のローカル画面は書き出し後に自動で読み直す。公開URLへは `main` に push すると反映される。

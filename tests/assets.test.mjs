@@ -42,7 +42,7 @@ test('絵・アニメの編集とMusicの採用候補が生成データへ反映
   for(const dir of ['tools','art','music'])cpSync(join(ROOT,dir),join(temp,dir),{recursive:true});mkdirSync(join(temp,'dist'));
   const build=which=>execFileSync(process.execPath,[join(temp,`tools/${which}.mjs`)],{env:{...process.env,PX13H},stdio:'pipe'});
   build('art');build('audio');assert.equal(read(temp,'dist/art-data.js'),read(ROOT,'dist/art-data.js'),'reproducible pixels');assert.equal(read(temp,'dist/audio-data.js'),read(ROOT,'dist/audio-data.js'),'reproducible PCM');
-  const hero=read(temp,'art/characters/hero.pic').replace('  ......3333......','  ......DDDD......').replace('stand:200','stand:350');
+  const hero=read(temp,'art/characters/hero.pic').replace(/(\npic stand 16 16 [^\n]*\n)  [^\n]*/,'$1  DDDDDDDDDDDDDDDD').replace(/\bstand:\d+/,'stand:350');
   writeFileSync(join(temp,'art/characters/hero.pic'),hero);build('art');
   const art=generated(temp,'art-data.js','MOONBLADE_ART');assert.equal(art.pics['characters/hero/stand'].data[6],13);assert.equal(art.anims['characters/hero/idle'][0].ms,350);
   writeFileSync(join(temp,'music/field.song'),read(temp,'music/field.song')+'\nchoice test bars 1 parts 0 "採用反映テスト"\n  A: o4 c1\n  B: o4 d1\n');

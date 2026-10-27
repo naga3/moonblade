@@ -35,7 +35,7 @@ tools/music/run.sh moonblade/field
 
 - Pixelの一覧の「moonblade」から、主人公、敵、森・水路・城のタイル、剣、アイコン、月と木、フォントを開けます。絵は `art/**/*.pic`、共通64色は `art/moonblade.gpl`、編集上の決まりは `art/GROUP.md`。`anim` に書いたコマと時間をゲームのアニメーションにも使います。地形の配置・当たり判定は `dist/game.js` の `makeLevel` で設定します。
 - Musicの一覧の「moonblade」には `field` のBGMと、`jump`・`sword`・`hit`・`hurt`・`gem`・`bounce`・`check`・`win` の効果音があります。元のメロディを `.song` に移し、Musicと同じファミコン音源で鳴らします。保存時に `.picks.json` の採用候補も反映します。
-- Pixelは自動保存、Musicは保存した後、各 `group.json` の `after` がゲーム用データを書き出します。**moonbladeで `npm start` しているローカル画面は自動で読み直されます**。公開URLへの反映はゲームを再配信した時です。
+- Pixelは自動保存、Musicは保存した後、各 `group.json` の `after` がゲーム用データを書き出します。**moonbladeで `npm start` しているローカル画面は自動で読み直されます**。公開URL（https://naga3.github.io/moonblade/）へは、`main` に push すると GitHub Actions が `dist/` を配信します。
 
 手動で書き出すときはmoonbladeで実行します。既定では隣の `../px13h` を使います。別の場所なら `PX13H=/path/to/px13h npm run build` を指定してください。
 
