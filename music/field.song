@@ -1,0 +1,31 @@
+title 月影の剣 / 月夜の道
+tempo 120
+mode famicom
+# 元のゲームの旋律。矩形波メロディと三角波ベース。
+instrument 0 moon @2 q6
+  v: 15 13 11 9 7 5 3 1 0
+part 0 @i0 v6
+part 1 v0
+part 2 v10 q4
+part 3 v0
+
+bar 1 A
+  0: o4 a8 r8 >e8 r8 c8 r8 <b8 r8
+  1: r1
+  2: o2 a2 a2
+  3: r1
+bar 2
+  0: o4 a8 r8 e8 r8 g8 r8 e8 r8
+  1: r1
+  2: o2 a2 a2
+  3: r1
+bar 3 B
+  0: o4 f8 r8 >c8 r8 <a8 r8 g8 r8
+  1: r1
+  2: o2 f2 f2
+  3: r1
+bar 4
+  0: o4 e8 r8 d8 r8 e8 r8 g8 r8
+  1: r1
+  2: o2 g2 g2
+  3: r1

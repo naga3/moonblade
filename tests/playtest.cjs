@@ -20,6 +20,12 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   await page.keyboard.press('Enter');
   await page.evaluate(()=>__moonblade.step(1));
   assert.equal(await page.evaluate(()=>__moonblade.state.mode),'play');
+  await page.waitForFunction(()=>__moonblade.state.audio.playing);
+  assert.equal(await page.evaluate(()=>__moonblade.state.audio.track),'field','PX-13h WAV background music');
+  await page.keyboard.press('KeyM');await page.evaluate(()=>__moonblade.step(1));
+  assert.ok(await page.evaluate(()=>__moonblade.state.audio.muted&&!__moonblade.state.audio.playing),'mute stops the music');
+  await page.keyboard.press('KeyM');await page.evaluate(()=>__moonblade.step(1));
+  await page.waitForFunction(()=>__moonblade.state.audio.playing);
   await page.evaluate(()=>__moonblade.step(30));
   assert.equal(await page.evaluate(()=>__moonblade.state.player.y),192,'lands on 16px map');
   await page.keyboard.down('ArrowRight');await page.evaluate(()=>__moonblade.step(30));await page.keyboard.up('ArrowRight');
@@ -50,6 +56,7 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   await page.keyboard.press('KeyP');await page.evaluate(()=>__moonblade.step(1));
   const paused=await page.evaluate(()=>{const g=__moonblade,before=g.state.player.x;g.key('right',true);g.step(60);g.clear();return{mode:g.state.mode,before,after:g.state.player.x};});
   assert.equal(paused.mode,'pause');assert.equal(paused.before,paused.after);
+  assert.ok(await page.evaluate(()=>__moonblade.state.audio.paused&&!__moonblade.state.audio.playing),'pause stops the music');
   await page.keyboard.press('KeyP');await page.evaluate(()=>__moonblade.step(1));
   // Traverse all three authored maps with only controls. The bot uses the same
   // collision map to time jumps and attacks; no teleporting or invulnerability.
@@ -93,6 +100,10 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   }
   await page.evaluate(()=>{__moonblade.start();__moonblade.setPlayer({x:170,y:150,ground:false,vy:1});__moonblade.key('down',true);__moonblade.key('attack',true);__moonblade.step(1);});
   await page.screenshot({path:path.join(root,'test-results/down-thrust.png')});
+  const reloaded=page.waitForEvent('domcontentloaded');
+  const now=new Date();fs.utimesSync(path.join(root,'dist/art-data.js'),now,now);
+  await reloaded;await page.waitForFunction(()=>window.__moonblade?.state.mode==='title');
+  console.log('PASS: local preview reloads after Pixel-generated data changes.');
   const mobile=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   const m=await mobile.newPage();m.on('pageerror',e=>errors.push(e.message));await m.addInitScript(()=>{window.requestAnimationFrame=()=>0;});await m.goto('http://localhost:4176/?test');
   await m.locator('canvas').tap({position:{x:160,y:112}});await m.evaluate(()=>__moonblade.step(31));
@@ -107,6 +118,11 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   assert.equal(await m.evaluate(()=>__moonblade.state.player.attackDir),'up','multitouch upward thrust');await touch([]);
   assert.ok(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile overflow');
   await m.screenshot({path:path.join(root,'test-results/mobile.png')});
+  const filePage=await browser.newPage();filePage.on('pageerror',e=>errors.push(e.message));await filePage.addInitScript(()=>{window.requestAnimationFrame=()=>0;});
+  await filePage.goto(require('node:url').pathToFileURL(path.join(root,'dist/index.html')).href+'?test');
+  await filePage.keyboard.press('Enter');await filePage.evaluate(()=>__moonblade.step(1));await filePage.waitForFunction(()=>__moonblade.state.audio.playing);
+  assert.equal(await filePage.evaluate(()=>__moonblade.state.palette.length),64,'standalone file includes Pixel palette');
+  console.log('PASS: PX-13h WAV playback, mute, pause and standalone file:// art/audio.');
   assert.deepEqual(errors,[],'no browser errors');
   console.log('PASS: checkpoints, damage, pause, three complete areas, final boss, palette and mobile.');
  }finally{if(browser)await browser.close();server.kill();}

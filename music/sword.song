@@ -1,0 +1,13 @@
+title 剣 / 風を切る
+tempo 120
+mode famicom
+instrument 0 cut @0 q8
+  v: 15 10 6 2 0
+instrument 1 low q8
+  v: 15 12 6 0
+  p: 0 -12 -24 -40 -56
+part 2 @i1 v10
+part 3 @i0 v12
+bar 1
+  2: o2 f32
+  3: o5 f32

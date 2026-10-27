@@ -1,0 +1,9 @@
+title 宝石 / きらめき
+tempo 120
+mode famicom
+instrument 0 sparkle @2 q8
+  v: 15 12 9 6 3 1 0
+  p: 0 8 16 24 32 40 48
+part 0 @i0 v10
+bar 1
+  0: o5 a16

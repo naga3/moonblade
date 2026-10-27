@@ -1,0 +1,13 @@
+title 命中 / 金属の火花
+tempo 120
+mode famicom
+instrument 0 spark @0 q8
+  v: 15 11 6 2 0
+  p: 0 -24 -48 -72 -96
+instrument 1 crack @1 q8
+  v: 15 10 7 4 1 0
+part 0 @i0 v12
+part 3 @i1 v10
+bar 1
+  0: o5 f16
+  3: o4 g16

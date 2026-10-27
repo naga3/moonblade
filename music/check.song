@@ -1,0 +1,8 @@
+title チェックポイント / 小さな祝福
+tempo 150
+mode famicom
+instrument 0 bell @2 q7
+  v: 15 12 10 8 6 4 2 1 0
+part 0 @i0 v10
+bar 1
+  0: o4 a16 >e16 a4

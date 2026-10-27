@@ -1,0 +1,8 @@
+title クリア / 夜明け
+tempo 120
+mode famicom
+instrument 0 dawn @2 q7
+  v: 15 13 11 9 7 5 3 2 1 0
+part 0 @i0 v11
+bar 1
+  0: o4 a16 >c+16 e16 a4
