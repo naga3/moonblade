@@ -57,15 +57,85 @@ addEventListener('keyup',e=>{const k=KEYMAP[e.code];if(k){e.preventDefault();key
 function clearInput(){keys.clear();pressed.clear();touchKeys.clear();touches.clear();}
 addEventListener('blur',()=>{clearInput();if(mode==='play')mode='pause';syncAudio();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInput();if(mode==='play')mode='pause';syncAudio();}});
-function resize(){const fit=Math.min(innerWidth/W,innerHeight/H);const scale=fit>=1?Math.max(1,Math.floor(fit)):fit;canvas.style.width=`${W*scale}px`;canvas.style.height=`${H*scale}px`;}
-addEventListener('resize',resize);resize();
+// On touch screens the controls live outside the 320x240 picture, as in GUNZO: below it when
+// held upright, in bands on either side when held sideways. Elsewhere the picture is just centred.
+const padCanvas=document.getElementById('pad'),padCtx=padCanvas&&padCanvas.getContext('2d');
+let pad=null;const padPointers=new Map();
+const coarse=matchMedia('(pointer: coarse)').matches;
+function resize(){
+ const iw=innerWidth,ih=innerHeight;let scale,mode=null;
+ if(coarse&&padCanvas&&ih>=iw){scale=Math.min(iw/W,(ih-190)/H);if(scale*W>=iw*.7)mode='bottom';}
+ else if(coarse&&padCanvas){scale=Math.min(ih/H,(iw-2*130)/W);if(scale*H>=ih*.6)mode='side';}
+ if(!mode){const fit=Math.min(iw/W,ih/H);scale=coarse?fit:fit>=1?Math.max(1,Math.floor(fit)):fit;}
+ const w=W*scale,h=H*scale,left=Math.round((iw-w)/2),top=mode==='bottom'?0:Math.round((ih-h)/2);
+ Object.assign(canvas.style,{position:'absolute',left:`${left}px`,top:`${top}px`,width:`${w}px`,height:`${h}px`});
+ pad=null;padPointers.clear();
+ if(!padCanvas)return;
+ if(!mode){padCanvas.style.display='none';return;}
+ // The pad is drawn in game pixels too, at the same scale, so it reads as part of the picture.
+ const pw=Math.ceil(iw/scale),ph=Math.ceil(ih/scale),ox=left/scale,oy=top/scale;
+ Object.assign(padCanvas.style,{display:'block',position:'absolute',left:'0',top:'0',width:`${iw}px`,height:`${ih}px`});
+ padCanvas.width=pw;padCanvas.height=ph;
+ if(mode==='bottom'){const by=oy+H,bh=ph-by,cy=Math.round(by+bh*.48),r=Math.round(Math.max(22,Math.min(34,bh*.18)));
+  pad={mode,scale,pw,ph,ox,oy,stick:{x:Math.round(pw*.24),y:cy},stickArea:x=>x<pw*.5,
+   buttons:[{key:'attack',label:'SWORD',x:Math.round(pw-r*3.3),y:cy-Math.round(r*.6),r},{key:'jump',label:'JUMP',x:Math.round(pw-r*1.25),y:cy+Math.round(r*.75),r}]};}
+ else{const band=ox,cy=Math.round(oy+H*.6),r=Math.round(Math.max(18,Math.min(28,band*.27))),bx=ox+W+band/2;
+  pad={mode,scale,pw,ph,ox,oy,stick:{x:Math.round(band/2),y:cy},stickArea:x=>x<ox,
+   buttons:[{key:'attack',label:'SWORD',x:Math.round(bx-r*.75),y:cy-Math.round(r*1.15),r},{key:'jump',label:'JUMP',x:Math.round(bx+r*.55),y:cy+Math.round(r*1.1),r}]};}
+ touchMode=true;
+}
+addEventListener('resize',resize);
 function pointerXY(e){const b=canvas.getBoundingClientRect();return{x:(e.clientX-b.left)*W/b.width,y:(e.clientY-b.top)*H/b.height};}
-function touchAction(p){if(p.y<22)return null;if(p.x<88&&p.y>163){if(p.y<192&&p.x>22&&p.x<60)return'up';if(p.y>219&&p.x>22&&p.x<60)return'down';if(p.x<37)return'left';return'right';}if(p.x>265&&p.y>174)return'jump';if(p.x>218&&p.y>192)return'attack';return null;}
-function updateTouches(){const next=new Set([...touches.values()].map(touchAction).filter(Boolean));for(const k of next)if(!touchKeys.has(k))pressed.add(k);touchKeys.clear();for(const k of next)touchKeys.add(k);}
+function touchAction(p){if(p.y<22||pad)return null;if(p.x<88&&p.y>163){if(p.y<192&&p.x>22&&p.x<60)return'up';if(p.y>219&&p.x>22&&p.x<60)return'down';if(p.x<37)return'left';return'right';}if(p.x>265&&p.y>174)return'jump';if(p.x>218&&p.y>192)return'attack';return null;}
+function updateTouches(){const next=new Set([...touches.values()].map(touchAction).filter(Boolean));for(const k of padKeys())next.add(k);for(const k of next)if(!touchKeys.has(k))pressed.add(k);touchKeys.clear();for(const k of next)touchKeys.add(k);}
 canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.focus();if(wake())return;unlockAudio();const p=pointerXY(e);if(e.pointerType==='touch')touchMode=true;if(mode==='title'){if(p.y>214&&p.x<100){muted=!muted;return;}if(p.y>142&&p.y<209){returnMode='title';mode='help';return;}pressed.add('start');return;}if(mode==='help'||mode==='pause'||mode==='dead'||mode==='win'){pressed.add('start');return;}if(p.y<22){if(p.x>295)pressed.add('pause');else if(p.x>278)pressed.add('mute');else if(p.x>259)pressed.add('help');return;}canvas.setPointerCapture(e.pointerId);touches.set(e.pointerId,p);updateTouches();});
 canvas.addEventListener('pointermove',e=>{if(touches.has(e.pointerId)){touches.set(e.pointerId,pointerXY(e));updateTouches();}});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(ev,e=>{touches.delete(e.pointerId);updateTouches();});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
+// Pad input: a floating stick (where the thumb lands is the centre; it trails a thumb dragged
+// past its reach) and two big buttons. Up/down on the stick are the thrusts, like the arrow keys.
+const STICK_REACH=20;
+function padXY(e){return{x:e.clientX/pad.scale,y:e.clientY/pad.scale};}
+function padButton(q){let best=null,bd=1e9;for(const b of pad.buttons){const d=Math.hypot(q.x-b.x,q.y-b.y);if(d<b.r+10&&d<bd){best=b;bd=d;}}return best;}
+function padKeys(){const out=[];if(!pad)return out;for(const t of padPointers.values()){
+ if(t.kind==='stick'){const dx=t.x-t.ax,dy=t.y-t.ay;if(dx>4)out.push('right');else if(dx< -4)out.push('left');if(dy< -8)out.push('up');else if(dy>8)out.push('down');}
+ else if(t.button)out.push(t.button.key);}return out;}
+if(padCanvas){
+ padCanvas.addEventListener('pointerdown',e=>{if(!pad)return;e.preventDefault();canvas.focus();if(wake())return;unlockAudio();
+  if(mode!=='play'){pressed.add('start');return;}
+  const q=padXY(e);try{padCanvas.setPointerCapture(e.pointerId);}catch{}
+  const b=padButton(q);
+  if(b)padPointers.set(e.pointerId,{kind:'button',button:b});
+  else if(pad.stickArea(q.x))padPointers.set(e.pointerId,{kind:'stick',ax:q.x,ay:q.y,x:q.x,y:q.y});
+  updateTouches();});
+ padCanvas.addEventListener('pointermove',e=>{const t=padPointers.get(e.pointerId);if(!t)return;const q=padXY(e);
+  if(t.kind==='stick'){t.x=q.x;t.y=q.y;const dx=t.x-t.ax,dy=t.y-t.ay,d=Math.hypot(dx,dy);if(d>STICK_REACH){t.ax+=dx/d*(d-STICK_REACH);t.ay+=dy/d*(d-STICK_REACH);}}
+  else t.button=padButton(q);
+  updateTouches();});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])padCanvas.addEventListener(ev,e=>{if(padPointers.delete(e.pointerId))updateTouches();});
+ padCanvas.addEventListener('contextmenu',e=>e.preventDefault());
+}
+resize();
+// The pad is painted with the same palette and font as the game.
+function renderPad(){if(!pad)return;const c=padCtx,{pw,ph}=pad;
+ const fill=(x,y,w,h,i)=>{c.fillStyle=PALETTE[i];c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));};
+ const disk=(cx,cy,r,i)=>{for(let y=-r;y<=r;y++){const dx=Math.floor(Math.sqrt(r*r-y*y));fill(cx-dx,cy+y,dx*2+1,1,i);}};
+ const ring=(cx,cy,r,i)=>{disk(cx,cy,r,i);disk(cx,cy,r-1,1);};
+ const label=(s,cx,y,i)=>{let x=Math.round(cx-textWidth(s)/2);for(const ch of s){const g=glyph(ch);for(let j=0;j<g.h;j++)for(let k=0;k<g.w;k++)if(g.data[j*g.w+k]>=0)fill(x+k,y+j,1,1,i);x+=g.w+1;}};
+ fill(0,0,pw,ph,0);
+ const active=mode==='play',stick=[...padPointers.values()].find(t=>t.kind==='stick');
+ // Stick: a ring at its centre and a knob toward the thumb.
+ const ax=stick?stick.ax:pad.stick.x,ay=stick?stick.ay:pad.stick.y;
+ ring(ax,ay,STICK_REACH+6,stick?5:3);
+ let kx=ax,ky=ay;if(stick){const dx=stick.x-ax,dy=stick.y-ay,d=Math.hypot(dx,dy)||1,m=Math.min(d,STICK_REACH);kx=ax+dx/d*m;ky=ay+dy/d*m;}
+ disk(Math.round(kx),Math.round(ky),9,stick?6:4);disk(Math.round(kx)-2,Math.round(ky)-2,3,stick?7:5);
+ if(!stick&&active){label('MOVE',ax,ay+STICK_REACH+11,4);label('UP/DOWN: THRUST',ax,ay+STICK_REACH+20,3);}
+ const held=new Set(padKeys());
+ for(const b of pad.buttons){const on=held.has(b.key),edge=b.key==='jump'?35:14;
+  ring(b.x,b.y,b.r,on?37:edge);if(on)disk(b.x,b.y,b.r-3,b.key==='jump'?33:11);
+  label(b.label,b.x,b.y-3,on?42:edge);}
+}
+
 const audio=window.MoonbladeAudio;
 function syncAudio(){const onTitle=mode==='title'||mode==='help'&&returnMode==='title',active=mode==='play'||mode==='pause'||mode==='help'&&returnMode==='play';audio.sync(onTitle?'title':active?'field':null,mode==='pause'||mode==='help'&&!onTitle,muted);}
 function unlockAudio(){audio.unlock();}
@@ -254,7 +324,7 @@ function drawWorld(){const jitter=shake>0?Math.round(Math.sin(tick*8)*Math.min(3
  for(const e of enemies)drawEnemy(e,cam);drawPlayer(player,cam);
  for(const e of effects)rect(e.x-cam,e.y,e.t>12?2:1,e.t>12?2:1,e.c);
  if(STAGES[level].boss&&bossAwake&&!bossDead){const x=63*16-cam;for(let i=0;i<5;i++){rect(x,129+i*16,2,10,58);dot(x+1,127+i*16,60);}}
- hud();if(touchMode)touchHud();
+ hud();if(touchMode&&!pad)touchHud();
  if(transition>0){const w=Math.floor((45-transition)/45*160);rect(0,0,w,240,0);rect(W-w,0,w,240,0);}
 }
 function title(){background(tick*.2,0);
@@ -287,11 +357,11 @@ function render(){
  else if(mode==='title'||mode==='help'&&returnMode==='title'){title();const t=tick-wokenAt;if(mode==='title'&&t<45){const r=Math.pow(t/45,2)*205;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const dx=x-160,dy=y-120;if(dx*dx+dy*dy>r*r)pixels[y*W+x]=0;}}}
  else if(mode==='win')winScreen();else drawWorld();
  if(mode==='help')helpScreen();if(mode==='pause')pauseScreen();if(mode==='dead')deadScreen();
- const out=image.data;for(let i=0,j=0;i<pixels.length;i++,j+=4){const c=rgb[pixels[i]];out[j]=c[0];out[j+1]=c[1];out[j+2]=c[2];out[j+3]=255;}ctx.putImageData(image,0,0);
+ const out=image.data;for(let i=0,j=0;i<pixels.length;i++,j+=4){const c=rgb[pixels[i]];out[j]=c[0];out[j+1]=c[1];out[j+2]=c[2];out[j+3]=255;}ctx.putImageData(image,0,0);renderPad();
 }
 let last=0,accumulator=0;
 function loop(now){if(!last)last=now;accumulator+=Math.min(100,now-last);last=now;while(accumulator>=STEP){update();accumulator-=STEP;}render();requestAnimationFrame(loop);}
 makeLevel(0);render();requestAnimationFrame(loop);
 // Development-only hooks for deterministic physics and framebuffer verification.
-if(new URLSearchParams(location.search).has('test'))window.__moonblade={get state(){return{mode,level,player,enemies,gems,map,score,kills,checkpoint,camera,bossAwake,bossDead,transition,palette:PALETTE,pixels,art:ART,audio:audio.status};},start:startRun,level:i=>{makeLevel(i);mode='play';},step:n=>{for(let i=0;i<n;i++)update();render();},setPlayer:v=>Object.assign(player,v),setEnemy:(id,v)=>Object.assign(enemies.find(e=>e.id===id),v),key:(k,on)=>{if(on){press(k);keys.add(k);}else keys.delete(k);},clear:clearInput,render};
+if(new URLSearchParams(location.search).has('test'))window.__moonblade={get state(){return{pad,mode,level,player,enemies,gems,map,score,kills,checkpoint,camera,bossAwake,bossDead,transition,palette:PALETTE,pixels,art:ART,audio:audio.status};},start:startRun,title:()=>{clearInput();mode='title';},level:i=>{makeLevel(i);mode='play';},step:n=>{for(let i=0;i<n;i++)update();render();},setPlayer:v=>Object.assign(player,v),setEnemy:(id,v)=>Object.assign(enemies.find(e=>e.id===id),v),key:(k,on)=>{if(on){press(k);keys.add(k);}else keys.delete(k);},clear:clearInput,render};
 })();

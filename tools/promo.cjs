@@ -24,21 +24,53 @@ function pageSetup(){
  const a=window.MoonbladeAudio;window.__rec={frame:0,track:null,effects:[]};
  a.unlock=()=>{};a.effect=n=>{__rec.effects.push([__rec.frame,n]);};
  a.sync=(name,paused,muted)=>{__rec.track=paused||muted?null:name;};
- window.__bot=()=>{const g=__moonblade,s=g.state,p=s.player;
-  const boss=s.enemies.find(e=>(e.type==='boss'||e.type==='king')&&e.alive);let direction='right';
-  if(boss&&s.bossAwake)direction=p.x+8<boss.x+8?'right':'left';
-  const wisp=!p.ground&&!s.map[13][Math.floor((p.x+8)/16)]&&s.enemies.filter(e=>e.alive&&e.type==='wisp'&&e.x>p.x-6&&e.y>p.y+4).sort((a,b)=>a.x-b.x)[0];
-  if(wisp)direction=p.x<wisp.x-2?'right':p.x>wisp.x+2?'left':'none';
-  g.key('left',direction==='left');g.key('right',direction==='right');
-  const d=direction==='left'?-1:1,tx=Math.floor((p.x+8+d*22)/16);
-  const pit=!s.map[13][tx],spike=s.map[12][tx]===3;
-  const threat=s.enemies.some(e=>e.alive&&e.type!=='bat'&&e.type!=='beetle'&&e.type!=='wisp'&&Math.abs(e.x-p.x)<48&&Math.abs(e.y-p.y)<25);
-  if(p.ground&&(pit||spike||threat)){g.key('jump',false);g.key('jump',true);}else if(p.ground)g.key('jump',false);
-  const under=s.enemies.some(e=>e.alive&&Math.abs(e.x-p.x)<23&&e.y>p.y+8&&e.y<p.y+54);
-  const overhead=s.enemies.some(e=>e.alive&&Math.abs(e.x-p.x)<19&&e.y<p.y-9);
-  const overPit=(!s.map[13][Math.floor((p.x+8)/16)]||!s.map[13][Math.floor((p.x+8+d*40)/16)])&&s.enemies.some(e=>e.alive&&e.type==='wisp'&&Math.abs(e.x-p.x)<96);
-  g.key('down',!p.ground&&(under||overPit));g.key('up',!under&&overhead);
-  if(p.cooldown===0){g.key('attack',false);g.key('attack',true);}
+ // A player-like bot for the video: it swings only when a blow would land, in the direction
+ // that wounds that foe, and fights the king by his stance instead of only diving on him.
+ window.__bot=()=>{const g=__moonblade,s=g.state,p=s.player,live=s.enemies.filter(e=>e.alive);
+  const ov=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+  const weak=(e,dir)=>e.type==='wisp'?dir==='down':e.type==='beetle'?dir==='up':e.type==='king'?(e.phase===0?dir==='up':e.phase===1?dir==='down':true):true;
+  const box=(x,y,dir,f)=>dir==='up'?{x:x+2,y:y-17,w:12,h:21}:dir==='down'?{x:x+2,y:y+12,w:12,h:23}:{x:x+(f>0?11:-17),y,w:22,h:17};
+  const hit=e=>e.type==='wisp'?{x:e.x-3,y:e.y,w:22,h:16}:{x:e.x+2,y:e.y+3,w:12,h:13};
+  const lands=(dir,f)=>live.some(e=>weak(e,dir)&&e.inv<6&&[0,3,6].some(k=>ov(box(p.x+p.vx*k,p.y+p.vy*k,dir,f),hit({...e,x:e.x+(e.vx||0)*k}))));
+  let move='right',jump=false,vault=false,noUp=false,noDown=false;
+  const boss=live.find(e=>e.type==='boss'||e.type==='king');
+  if(boss&&s.bossAwake){
+   const dx=boss.x-p.x,side=dx>=0?1:-1,toward=side>0?'right':'left',away=side>0?'left':'right';
+   if(boss.type==='king'){const t=boss.timer%200;
+    // Like a person, take a few pokes while he floats, then step back and watch his next stance.
+    const cycle=Math.floor(boss.timer/200);if(__rec.cycle!==cycle){__rec.cycle=cycle;__rec.hits=0;__rec.hp=boss.hp;}
+    if(boss.hp<__rec.hp){__rec.hits+=__rec.hp-boss.hp;__rec.hp=boss.hp;}
+    if(boss.phase===0){if(__rec.hits<3)move=Math.abs(dx)<3?'none':toward;else{move=Math.abs(dx)<56?away:'none';noUp=true;}}
+    else if(boss.phase===1){
+     // Up to two dives on his head; after that, hop clean over him when he walks close.
+     if(Math.abs(dx)<36||!p.ground&&__rec.vault){move=toward;jump=true;__rec.vault=true;vault=__rec.hits<2;}else{__rec.vault=false;move='none';}}
+    else if(t<80){move=!p.ground&&t>=40?toward:Math.abs(dx)>90?toward:'none';if(t>=40&&Math.abs(dx)<62&&Math.sign(boss.vx)===side*-1)jump=true;}
+    else move=Math.abs(dx)>18||p.facing!==side?toward:'none';
+    if(!(boss.phase===1&&__rec.hits<2))noDown=true;
+   }else move=Math.abs(dx)>18?toward:'none';
+  }else{
+   const wisp=!p.ground&&!s.map[13][Math.floor((p.x+8)/16)]&&live.filter(e=>e.type==='wisp'&&e.x>p.x-6&&e.y>p.y+4).sort((a,b)=>a.x-b.x)[0];
+   if(wisp)move=p.x<wisp.x-2?'right':p.x>wisp.x+2?'left':'none';
+   // Stand and cut down a walker ahead rather than hopping over it.
+   const foe=live.find(e=>(e.type==='slime'||e.type==='knight')&&Math.abs(e.y-p.y)<10&&e.x-p.x>8&&e.x-p.x<30);
+   if(foe&&p.ground)move='none';
+   if(p.ground&&live.some(e=>(e.type==='slime'||e.type==='knight')&&Math.abs(e.y-p.y)<10&&e.x-p.x>-4&&e.x-p.x<9))jump=true;
+  }
+  g.key('left',move==='left');g.key('right',move==='right');
+  const f=move==='left'?-1:move==='right'?1:p.facing,d=f;
+  const tx=Math.floor((p.x+8+d*22)/16);
+  if(move!=='none'&&(!s.map[13][tx]||s.map[12][tx]===3))jump=true;
+  // Hop up onto a ledge that starts just ahead, as a player would, instead of bumping under it.
+  const up2=Math.floor(p.y/16)-2,ahead=Math.floor((p.x+8+d*20)/16),here=Math.floor((p.x+8)/16);
+  if(p.ground&&move!=='none'&&s.map[up2]&&s.map[up2][ahead]===2&&!s.map[up2][here])jump=true;
+  if(p.ground&&jump&&s.map[up2]&&s.map[up2][here]===2&&s.map[12][tx]!==3)jump=false;
+  if(p.ground&&jump){g.key('jump',false);g.key('jump',true);}else if(p.ground)g.key('jump',false);
+  const overPit=(!s.map[13][Math.floor((p.x+8)/16)]||!s.map[13][Math.floor((p.x+8+d*40)/16)])&&live.some(e=>e.type==='wisp'&&Math.abs(e.x-p.x)<96);
+  let dir=null;
+  if(p.cooldown===0)dir=!noDown&&!p.ground&&lands('down',f)?'down':!noUp&&lands('up',f)?'up':lands('side',f)?'side':null;
+  if(!dir&&!noDown&&vault&&!p.ground&&p.vy>0&&p.cooldown===0&&Math.abs(boss.x-p.x)<14)dir='down';
+  g.key('down',dir==='down'||(!p.ground&&overPit&&p.attackDir==='down'&&p.attack>0));g.key('up',dir==='up');
+  if(dir){g.key('attack',false);g.key('attack',true);__rec.swings=(__rec.swings||0)+1;}else g.key('attack',false);
  };
  // Advance up to `count` frames; stop early `after` frames past the moment `until` first holds.
  window.__shoot=(count,bot,until,after)=>{
@@ -54,7 +86,8 @@ function pageSetup(){
  window.__skip=(n,bot)=>{for(let i=0;i<n;i++){if(bot)__bot();__moonblade.step(1);}__rec.effects=__rec.effects.filter(e=>e[0]<__rec.frame);};
 }
 
-(async()=>{
+module.exports={pageSetup};
+if(require.main===module)(async()=>{
  fs.mkdirSync(outDir,{recursive:true});
  const browser=await chromium.launch();
  const page=await browser.newPage();
@@ -84,7 +117,7 @@ function pageSetup(){
  await shoot(260);
  // 2. Area 1: slash, jump, thrust.
  await page.keyboard.press('Enter');
- await shoot(560,{bot:true,text:'SLASH. JUMP. THRUST UP AND DOWN.'});
+ await shoot(560,{bot:true,text:'SLASH AND JUMP THROUGH THE NIGHT'});
  await ev('__moonblade.clear()');
  // 3. Area 4: a chain of wisps crossed by bouncing on them.
  await ev('__moonblade.level(3)');await ev('__skip(110,true)');
@@ -94,13 +127,13 @@ function pageSetup(){
  await ev('__moonblade.level(4)');await ev('__skip(20,true)');
  await shoot(300,{bot:true,text:'UP THRUST BREAKS THE SHELL'});
  await ev('__moonblade.clear()');
- // 5. Area 6: the Pale King, then the gate and the ending.
- await ev('__moonblade.level(5)');await ev('__moonblade.setPlayer({x:56*16+8,y:192})');await ev('__skip(150,false)');
- await shoot(2400,{bot:true,text:'',until:"s.bossDead",after:150});
- await shoot(600,{bot:true,until:"s.mode==='win'",after:200});
+ // 5. Area 6: the Pale King. Up while he floats, down on his shield, a slash after his charge.
+ await ev('__moonblade.level(5)');await ev('__moonblade.setPlayer({x:60*16,y:192})');await ev('__skip(150,false)');
+ // Cut away mid-fight, once he is down to a third of his strength.
+ await shoot(1500,{bot:true,until:"s.enemies.some(e=>e.type==='king'&&e.hp<=4)",after:50});
  await ev('__moonblade.clear()');
- // 6. Back to the title with the address.
- await page.keyboard.press('Enter');
+ // 6. Cut back to the title with the address.
+ await ev('__moonblade.title()');
  await shoot(300,{text:'NAGA3.GITHUB.IO/MOONBLADE',y:104});
  ff.stdin.end();await ffDone;
 

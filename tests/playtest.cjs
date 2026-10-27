@@ -129,7 +129,7 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   for(let stage=0;stage<6;stage++){
    await page.evaluate(i=>{__moonblade.level(i);__moonblade.step(160);},stage);
    const colors=await page.evaluate(()=>{
-    const s=__moonblade.state,c=document.querySelector('canvas'),data=c.getContext('2d').getImageData(0,0,320,240).data,set=new Set();
+    const s=__moonblade.state,c=document.querySelector('#game'),data=c.getContext('2d').getImageData(0,0,320,240).data,set=new Set();
     for(let i=0;i<data.length;i+=4){if(data[i+3]!==255)throw Error('Non-opaque pixel');set.add('#'+[data[i],data[i+1],data[i+2]].map(n=>n.toString(16).padStart(2,'0')).join(''));}
     return{w:c.width,h:c.height,count:set.size,valid:[...set].every(c=>s.palette.includes(c)),paletteSize:s.palette.length};
    });
@@ -143,21 +143,38 @@ const server=spawn(process.execPath,['server.cjs'],{cwd:root,env:{...process.env
   const now=new Date();fs.utimesSync(path.join(root,'dist/art-data.js'),now,now);
   await reloaded;await page.waitForFunction(()=>window.__moonblade?.state.mode==='title',null,{polling:50});
   console.log('PASS: local preview reloads after Pixel-generated data changes.');
-  const mobile=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
-  const m=await mobile.newPage();m.on('pageerror',e=>errors.push(e.message));await m.addInitScript(()=>{window.requestAnimationFrame=()=>0;});await m.goto('http://localhost:4176/?test');
-  await m.locator('canvas').tap({position:{x:160,y:112}});await m.evaluate(()=>__moonblade.step(1));assert.equal(await m.evaluate(()=>__moonblade.state.mode),'title','first tap wakes sound');
-  await m.locator('canvas').tap({position:{x:160,y:112}});await m.evaluate(()=>__moonblade.step(31));
-  assert.equal(await m.evaluate(()=>__moonblade.state.mode),'play');
-  const box=await m.locator('canvas').boundingBox(),cdp=await mobile.newCDPSession(m);
-  const touch=async(points)=>cdp.send('Input.dispatchTouchEvent',{type:points.length?'touchStart':'touchEnd',touchPoints:points.map(([x,y],id)=>({x:box.x+x,y:box.y+y,id}))});
-  await touch([[55,205]]);await m.evaluate(()=>__moonblade.step(15));await touch([]);
-  assert.ok(await m.evaluate(()=>__moonblade.state.player.x>50),'real touch moves right');
-  await touch([[290,200]]);await m.evaluate(()=>__moonblade.step(10));await touch([]);
-  assert.ok(await m.evaluate(()=>__moonblade.state.player.y<170),'real touch jumps');
-  await touch([[37,183],[245,220]]);await m.evaluate(()=>__moonblade.step(1));
-  assert.equal(await m.evaluate(()=>__moonblade.state.player.attackDir),'up','multitouch upward thrust');await touch([]);
-  assert.ok(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no mobile overflow');
-  await m.screenshot({path:path.join(root,'test-results/mobile.png')});
+  // Phones: the picture sits at the top (upright) or in the middle (sideways) and the stick and
+  // buttons live outside it. Drive them with real multi-touch events.
+  for(const [name,vp] of [['portrait',{width:390,height:844}],['landscape',{width:844,height:390}]]){
+   const mobile=await browser.newContext({viewport:vp,hasTouch:true,isMobile:true});
+   const m=await mobile.newPage();m.on('pageerror',e=>errors.push(e.message));await m.addInitScript(()=>{window.requestAnimationFrame=()=>0;});await m.goto('http://localhost:4176/?test');
+   const pad=await m.evaluate(()=>{const p=__moonblade.state.pad;return p&&{mode:p.mode,scale:p.scale,ox:p.ox,oy:p.oy,stick:p.stick,buttons:p.buttons.map(b=>({key:b.key,x:b.x,y:b.y,r:b.r}))};});
+   assert.equal(pad?.mode,name==='portrait'?'bottom':'side',`${name} pad layout`);
+   const at=(x,y)=>({x:x*pad.scale,y:y*pad.scale}),btn=k=>{const b=pad.buttons.find(b=>b.key===k);return at(b.x,b.y);},home=at(pad.stick.x,pad.stick.y);
+   const game=await m.locator('#game').boundingBox();
+   if(name==='portrait'){assert.ok(game.y<1&&game.width>=380,'picture fills the width at the top');assert.ok(btn('jump').y>game.y+game.height,'buttons below the picture');}
+   else{assert.ok(btn('attack').x>game.x+game.width&&home.x<game.x,'stick left, buttons right');}
+   for(const b of pad.buttons)assert.ok(b.r*pad.scale>=26,`${b.key} button is big (${Math.round(b.r*pad.scale*2)}px across)`);
+   const cdp=await mobile.newCDPSession(m);
+   const touch=async(type,pts)=>cdp.send('Input.dispatchTouchEvent',{type,touchPoints:pts.map(([p,id])=>({x:p.x,y:p.y,id}))});
+   await touch('touchStart',[[home,0]]);await touch('touchEnd',[]);await m.evaluate(()=>__moonblade.step(1));
+   assert.equal(await m.evaluate(()=>__moonblade.state.mode),'title','first tap wakes sound');
+   await touch('touchStart',[[home,0]]);await touch('touchEnd',[]);await m.evaluate(()=>__moonblade.step(31));
+   assert.equal(await m.evaluate(()=>__moonblade.state.mode),'play');
+   await m.evaluate(()=>{for(const e of __moonblade.state.enemies)e.alive=false;});
+   // Floating stick: press anywhere in its area and drag right.
+   const s0={x:home.x+10,y:home.y+6};
+   await touch('touchStart',[[s0,0]]);await touch('touchMove',[[{x:s0.x+60,y:s0.y},0]]);await m.evaluate(()=>__moonblade.step(15));await touch('touchEnd',[]);
+   assert.ok(await m.evaluate(()=>__moonblade.state.player.x>50),`${name}: stick moves right`);
+   await touch('touchStart',[[btn('jump'),1]]);await m.evaluate(()=>__moonblade.step(10));await touch('touchEnd',[]);
+   assert.ok(await m.evaluate(()=>__moonblade.state.player.y<170),`${name}: jump button`);
+   await m.evaluate(()=>__moonblade.step(60));
+   await touch('touchStart',[[s0,0]]);await touch('touchMove',[[{x:s0.x,y:s0.y-60},0]]);await touch('touchMove',[[{x:s0.x,y:s0.y-60},0],[btn('attack'),1]]);await m.evaluate(()=>__moonblade.step(1));
+   assert.equal(await m.evaluate(()=>__moonblade.state.player.attackDir),'up',`${name}: stick up + sword = up thrust`);await touch('touchEnd',[]);
+   assert.ok(await m.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&document.documentElement.scrollHeight<=innerHeight),'no mobile overflow');
+   await m.evaluate(()=>__moonblade.render());await m.screenshot({path:path.join(root,`test-results/mobile-${name}.png`)});
+   await mobile.close();
+  }
   const filePage=await browser.newPage();filePage.on('pageerror',e=>errors.push(e.message));await filePage.addInitScript(()=>{window.requestAnimationFrame=()=>0;});
   await filePage.goto(require('node:url').pathToFileURL(path.join(root,'dist/index.html')).href+'?test');
   await filePage.keyboard.press('Enter');await filePage.keyboard.press('Enter');await filePage.evaluate(()=>__moonblade.step(1));await filePage.waitForFunction(()=>__moonblade.state.audio.playing,null,{polling:50});
