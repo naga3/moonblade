@@ -2,7 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, 'dist');
-const port = Number(process.env.PORT || 4173);
+const port = Number(process.env.PORT || 15120);
 const clients=new Set();
 let reloadTimer;
 fs.watch(root,{recursive:true},(_,file)=>{
